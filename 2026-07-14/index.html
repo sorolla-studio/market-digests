@@ -18,10 +18,13 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink);
   font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px 24px 56px}
+body.solo{padding:14px 14px 20px}
+body.solo header,body.solo section h2,body.solo details{display:none}
 main{max-width:1060px;margin:0 auto}
 h1{font-size:21px;margin:0 0 2px}
 .sub{color:var(--ink2);margin:0 0 28px}
 h2{font-size:15px;margin:34px 0 4px}
+body.solo section{margin:0}
 .note{color:var(--muted);font-size:12.5px;margin:0 0 14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
 .card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 14px 8px}
@@ -35,6 +38,18 @@ svg{display:block;width:100%;height:auto}
 .legend{display:flex;gap:18px;font-size:12.5px;color:var(--ink2);margin:0 0 10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+/* lane weather */
+.lanes{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:6px 22px;
+  background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px 18px}
+.lane{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.lane .nm{flex:1;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11px;padding:1px 8px;border-radius:9px;min-width:62px;text-align:center;color:#fff}
+.chip.rising{background:var(--up)}
+.chip.declining{background:var(--down)}
+.chip.stable{background:var(--mid);color:var(--ink2)}
+.chip.none,.chip.toofew{background:transparent;color:var(--muted);border:1px dashed var(--grid)}
+.arr{color:var(--muted);font-size:11px;width:12px;text-align:center}
+.lane.flip .nm{font-weight:600}
 details{margin-top:26px}
 summary{cursor:pointer;color:var(--ink2);font-size:13px}
 table{border-collapse:collapse;margin-top:10px;font-size:12.5px;background:var(--surface);
@@ -43,28 +58,54 @@ th,td{padding:5px 12px;text-align:right;font-variant-numeric:tabular-nums;border
 th{color:var(--ink2);font-weight:600}
 td:first-child,th:first-child{text-align:left}
 </style></head><body><main>
+<header>
 <h1>Market Digest — visual companion</h1>
 <p class="sub">Week of 2026-07-14 · chart positions of the games we track (1 = top of the chart)</p>
+</header>
 
+<section data-view="lanes">
+<h2>Lane weather</h2>
+<p class="note">Every lane we track, last week → this week. Bold = changed direction this cycle. (Part of this week's extra flips comes from a sharper measuring lens; each flip's direction is real.)</p>
+<div class="lanes" id="lanes"></div>
+</section>
+
+<section data-view="movers">
 <h2>Games on the move</h2>
 <p class="note">Chart position over the last four weeks. Blue = gaining ground this week, red = just rolled over. Hover a point for the exact position.</p>
 <div class="legend"><span><i class="sw" style="background:var(--up)"></i>climbing</span><span><i class="sw" style="background:var(--down)"></i>rolled over</span></div>
 <div class="grid" id="panels"></div>
+</section>
 
+<section data-view="shifts">
 <h2>Positions gained or lost this week</h2>
-<p class="note">How many chart positions each game moved since last week. Longest bars = biggest moves.</p>
+<p class="note">How many chart positions each game moved since last week. Longest bars = biggest moves. ($) = earnings chart.</p>
 <div class="card" id="barcard"></div>
+</section>
 
-<details><summary>Data table (all games shown above)</summary><div id="tbl"></div></details>
+<details><summary>Data table (movers shown above)</summary><div id="tbl"></div></details>
 </main>
 <div class="tt" id="tt"></div>
 <script>
-const D={"date": "2026-07-14", "weeks": ["Jun 22", "Jun 29", "Jul 6", "Jul 14"], "panels": [{"name": "Rollance : Adventure Balls", "chart": "free", "ranks": [63.0, 53.0, 84.0, 40.0], "pol": "up"}, {"name": "Top Tycoon: Coin Theme Empire", "chart": "free", "ranks": [null, null, 58.0, 16.0], "pol": "up"}, {"name": "Farm Land - Farming life game", "chart": "free", "ranks": [79.0, 80.0, 94.0, 56.0], "pol": "up"}, {"name": "Tasty Travels: Merge Game", "chart": "free", "ranks": [null, null, 71.0, 36.0], "pol": "up"}, {"name": "Gossip Harbor\u00ae: Merge & Story", "chart": "free", "ranks": [43.0, 42.0, 34.0, 9.0], "pol": "up"}, {"name": "Antistress - relaxation toys", "chart": "free", "ranks": [44.0, 46.0, 49.0, 31.0], "pol": "up"}, {"name": "Mother Life Simulator: Prank", "chart": "free", "ranks": [81.0, 61.0, 51.0, 99.0], "pol": "down"}, {"name": "Bridge Race", "chart": "free", "ranks": [38.0, 40.0, 44.0, 87.0], "pol": "down"}, {"name": "Gym Idle Clicker: Fitness Hero", "chart": "free", "ranks": [30.0, 31.0, 26.0, 62.0], "pol": "down"}, {"name": "Zoo Prank: Crazy Animals", "chart": "free", "ranks": [87.0, 43.0, 11.0, 45.0], "pol": "down"}, {"name": "Monster Shooter: Survival FPS", "chart": "free", "ranks": [70.0, 66.0, 58.0, 90.0], "pol": "down"}, {"name": "Crazy Office \u2014 Slap & Smash", "chart": "free", "ranks": [66.0, 68.0, 71.0, 91.0], "pol": "down"}], "bars": [{"name": "Rollance : Adventure Balls", "chart": "free", "v": 44.0}, {"name": "Top Tycoon: Coin Theme Empire", "chart": "free", "v": 42.0}, {"name": "Farm Land - Farming life game", "chart": "free", "v": 38.0}, {"name": "Tasty Travels: Merge Game", "chart": "free", "v": 35.0}, {"name": "Gossip Harbor\u00ae: Merge & Story", "chart": "free", "v": 25.0}, {"name": "Paint by Number: Coloring Game", "chart": "free", "v": 23.0}, {"name": "Shoot Out: Gun Shooting Games", "chart": "free", "v": 21.0}, {"name": "Tower War - Tactical Conquest", "chart": "free", "v": 20.0}, {"name": "Renovation Day: House Makeover", "chart": "grossing", "v": 19.0}, {"name": "Antistress - relaxation toys", "chart": "free", "v": 18.0}, {"name": "SCHOOLBOY RUNAWAY - STEALTH", "chart": "free", "v": 18.0}, {"name": "Stumble Guys", "chart": "free", "v": 18.0}, {"name": "Home Pin 4 : Tire la Cheville", "chart": "free", "v": -20.0}, {"name": "Crazy Office \u2014 Slap & Smash", "chart": "free", "v": -20.0}, {"name": "Car Driving City: StreetPro", "chart": "free", "v": -23.0}, {"name": "Tile Park", "chart": "free", "v": -23.0}, {"name": "Mini Challenges: Calm Games", "chart": "free", "v": -26.0}, {"name": "Supermarket Game", "chart": "free", "v": -31.0}, {"name": "Monster Shooter: Survival FPS", "chart": "free", "v": -32.0}, {"name": "Pod Runner", "chart": "grossing", "v": -33.0}, {"name": "Zoo Prank: Crazy Animals", "chart": "free", "v": -34.0}, {"name": "Gym Idle Clicker: Fitness Hero", "chart": "free", "v": -36.0}, {"name": "Bridge Race", "chart": "free", "v": -43.0}, {"name": "Mother Life Simulator: Prank", "chart": "free", "v": -48.0}]};
-const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const D={"date": "2026-07-14", "weeks": ["Jun 22", "Jun 29", "Jul 6", "Jul 14"], "panels": [{"name": "Rollance : Adventure Balls", "chart": "free", "ranks": [63.0, 53.0, 84.0, 40.0], "pol": "up"}, {"name": "Top Tycoon: Coin Theme Empire", "chart": "free", "ranks": [null, null, 58.0, 16.0], "pol": "up"}, {"name": "Farm Land - Farming life game", "chart": "free", "ranks": [79.0, 80.0, 94.0, 56.0], "pol": "up"}, {"name": "Tasty Travels: Merge Game", "chart": "free", "ranks": [null, null, 71.0, 36.0], "pol": "up"}, {"name": "Gossip Harbor\u00ae: Merge & Story", "chart": "free", "ranks": [43.0, 42.0, 34.0, 9.0], "pol": "up"}, {"name": "Antistress - relaxation toys", "chart": "free", "ranks": [44.0, 46.0, 49.0, 31.0], "pol": "up"}, {"name": "Mother Life Simulator: Prank", "chart": "free", "ranks": [81.0, 61.0, 51.0, 99.0], "pol": "down"}, {"name": "Bridge Race", "chart": "free", "ranks": [38.0, 40.0, 44.0, 87.0], "pol": "down"}, {"name": "Gym Idle Clicker: Fitness Hero", "chart": "free", "ranks": [30.0, 31.0, 26.0, 62.0], "pol": "down"}, {"name": "Zoo Prank: Crazy Animals", "chart": "free", "ranks": [87.0, 43.0, 11.0, 45.0], "pol": "down"}, {"name": "Monster Shooter: Survival FPS", "chart": "free", "ranks": [70.0, 66.0, 58.0, 90.0], "pol": "down"}, {"name": "Crazy Office \u2014 Slap & Smash", "chart": "free", "ranks": [66.0, 68.0, 71.0, 91.0], "pol": "down"}], "bars": [{"name": "Rollance : Adventure Balls", "chart": "free", "v": 44.0}, {"name": "Top Tycoon: Coin Theme Empire", "chart": "free", "v": 42.0}, {"name": "Farm Land - Farming life game", "chart": "free", "v": 38.0}, {"name": "Tasty Travels: Merge Game", "chart": "free", "v": 35.0}, {"name": "Gossip Harbor\u00ae: Merge & Story", "chart": "free", "v": 25.0}, {"name": "Paint by Number: Coloring Game", "chart": "free", "v": 23.0}, {"name": "Shoot Out: Gun Shooting Games", "chart": "free", "v": 21.0}, {"name": "Tower War - Tactical Conquest", "chart": "free", "v": 20.0}, {"name": "Renovation Day: House Makeover", "chart": "grossing", "v": 19.0}, {"name": "Antistress - relaxation toys", "chart": "free", "v": 18.0}, {"name": "SCHOOLBOY RUNAWAY - STEALTH", "chart": "free", "v": 18.0}, {"name": "Stumble Guys", "chart": "free", "v": 18.0}, {"name": "Home Pin 4 : Tire la Cheville", "chart": "free", "v": -20.0}, {"name": "Crazy Office \u2014 Slap & Smash", "chart": "free", "v": -20.0}, {"name": "Car Driving City: StreetPro", "chart": "free", "v": -23.0}, {"name": "Tile Park", "chart": "free", "v": -23.0}, {"name": "Mini Challenges: Calm Games", "chart": "free", "v": -26.0}, {"name": "Supermarket Game", "chart": "free", "v": -31.0}, {"name": "Monster Shooter: Survival FPS", "chart": "free", "v": -32.0}, {"name": "Pod Runner", "chart": "grossing", "v": -33.0}, {"name": "Zoo Prank: Crazy Animals", "chart": "free", "v": -34.0}, {"name": "Gym Idle Clicker: Fitness Hero", "chart": "free", "v": -36.0}, {"name": "Bridge Race", "chart": "free", "v": -43.0}, {"name": "Mother Life Simulator: Prank", "chart": "free", "v": -48.0}], "lanes": [{"name": "Virtual Pet & Kids Entertainment", "prev": "stable", "curr": "rising", "n": 12}, {"name": ".io Arena & PvP", "prev": "stable", "curr": "stable", "n": 7}, {"name": "ASMR Sandbox & Fidget Toys", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Board & Card Games Social", "prev": "stable", "curr": "stable", "n": 11}, {"name": "Destruction & Stress Relief", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Driving Simulation Legacy", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Endless Runner Legacy", "prev": "stable", "curr": "stable", "n": 5}, {"name": "Farming & Resource Idle", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Hole & Eat-to-Grow Puzzles", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Idle Defense & Horde Survival", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Idle Tycoons & Service Sims", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Match-3 & Blast Puzzles", "prev": "stable", "curr": "stable", "n": 19}, {"name": "Merge & Build Narrative", "prev": "stable", "curr": "stable", "n": 8}, {"name": "Music & Rhythm Games", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Screw & Bolt ASMR", "prev": "stable", "curr": "stable", "n": 8}, {"name": "Social Casino & Slots", "prev": "stable", "curr": "stable", "n": 18}, {"name": "Spin & Build Social PvP", "prev": "stable", "curr": "stable", "n": 5}, {"name": "Traffic & Parking Jam Puzzles", "prev": "stable", "curr": "stable", "n": 6}, {"name": "ASMR Transformation & Craft", "prev": "stable", "curr": "declining", "n": 6}, {"name": "Casual Shooters & Stealth", "prev": "stable", "curr": "declining", "n": 5}, {"name": "Mahjong, Tile & Solitaire Puzzles", "prev": "stable", "curr": "declining", "n": 8}, {"name": "Party & Social Multiplayer", "prev": "stable", "curr": "declining", "n": 8}, {"name": "Platformer & Adventure", "prev": "stable", "curr": "declining", "n": 6}, {"name": "Sort & Color Match Puzzles", "prev": "stable", "curr": "declining", "n": 9}, {"name": "Speed Racers & Action Runners", "prev": "stable", "curr": "declining", "n": 6}, {"name": "Zen Logic & Spatial Puzzles", "prev": "stable", "curr": "declining", "n": 8}, {"name": "Brain Teaser & Trick Puzzles", "prev": "declining", "curr": "declining", "n": 5}, {"name": "Cozy Collection & Decor", "prev": "declining", "curr": "declining", "n": 3}, {"name": "Crowd Runners & Gate Mechanics", "prev": "declining", "curr": "declining", "n": 4}, {"name": "Farm & Life Simulation", "prev": "declining", "curr": "declining", "n": 5}, {"name": "Idle Clicker & Incremental", "prev": "declining", "curr": "declining", "n": 2}, {"name": "Yarn & Thread Puzzles", "prev": "declining", "curr": "declining", "n": 7}, {"name": "Consumption & Evolution RPG", "prev": "too few", "curr": "too few", "n": 4}, {"name": "Sports PvP & Simulation", "prev": "too few", "curr": "too few", "n": 4}]};
+const view=new URLSearchParams(location.search).get('view');
+if(view){document.body.classList.add('solo');
+  document.querySelectorAll('section').forEach(s=>{if(s.dataset.view!==view)s.style.display='none';});}
 const tt=document.getElementById('tt');
 function showTT(e,html){tt.innerHTML=html;tt.style.display='block';
   tt.style.left=(e.clientX+12)+'px';tt.style.top=(e.clientY-10)+'px';}
 function hideTT(){tt.style.display='none';}
+
+// --- lane weather ---
+const L=document.getElementById('lanes');
+D.lanes.forEach(l=>{
+  const flip=l.prev&&l.prev!==l.curr;
+  const d=document.createElement('div');d.className='lane'+(flip?' flip':'');
+  const chip=s=>s?'<span class="chip '+s.replace(' ','')+'">'+s+'</span>':'<span class="chip none">new</span>';
+  d.innerHTML='<span class="nm">'+l.name+'</span>'+chip(l.prev)+'<span class="arr">→</span>'+chip(l.curr);
+  d.addEventListener('mousemove',e=>showTT(e,l.name+'<br>'+l.n+' games charting · '+(flip?'changed this cycle':'unchanged')));
+  d.addEventListener('mouseleave',hideTT);
+  L.appendChild(d);
+});
 
 // --- trajectory small multiples ---
 const P=document.getElementById('panels');
@@ -75,7 +116,7 @@ D.panels.forEach(p=>{
   if(hi-lo<8){const c=(hi+lo)/2;lo=c-4;hi=c+4;}
   lo=Math.max(1,Math.floor(lo-2));hi=Math.ceil(hi+2);
   const x=i=>m.l+i*(W-m.l-m.r)/3;
-  const y=v=>m.t+(v-lo)/(hi-lo)*(H-m.t-m.b); // rank 1 at top
+  const y=v=>m.t+(v-lo)/(hi-lo)*(H-m.t-m.b);
   const col=p.pol==='up'?'var(--up)':'var(--down)';
   let s='<svg viewBox="0 0 '+W+' '+H+'">';
   [lo,Math.round((lo+hi)/2),hi].forEach(g=>{
@@ -83,16 +124,15 @@ D.panels.forEach(p=>{
     s+='<text x="'+(m.l-6)+'" y="'+(y(g)+4)+'" text-anchor="end" font-size="10" fill="var(--muted)">#'+g+'</text>';});
   D.weeks.forEach((w,i)=>{s+='<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="var(--muted)">'+w+'</text>';});
   let path='',started=false;
-  p.ranks.forEach((v,i)=>{if(v==null){return;}
+  p.ranks.forEach((v,i)=>{if(v==null)return;
     path+=(started?'L':'M')+x(i)+' '+y(v)+' ';started=true;});
   s+='<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
   p.ranks.forEach((v,i)=>{if(v==null)return;
-    s+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.5" fill="'+col+'" stroke="var(--surface)" stroke-width="2" class="pt" data-i="'+i+'" data-v="'+v+'"/>';
+    s+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.5" fill="'+col+'" stroke="var(--surface)" stroke-width="2"/>';
     s+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="11" fill="transparent" class="hit" data-i="'+i+'" data-v="'+v+'"/>';});
   s+='</svg>';
   const card=document.createElement('div');card.className='card';
-  const tag=(p.chart==='grossing'?'earnings chart':'downloads chart');
-  card.innerHTML='<h3>'+p.name+'</h3><div class="tag">'+tag+'</div>'+s;
+  card.innerHTML='<h3>'+p.name+'</h3><div class="tag">'+(p.chart==='grossing'?'earnings chart':'downloads chart')+'</div>'+s;
   P.appendChild(card);
   card.querySelectorAll('.hit').forEach(c=>{
     c.addEventListener('mousemove',e=>showTT(e,p.name+'<br>'+D.weeks[+c.dataset.i]+': position <b>#'+(+c.dataset.v)+'</b>'));
@@ -111,8 +151,7 @@ B.forEach((b,i)=>{
   const yy=m2.t+i*rowH+3,h=rowH-6;
   const col=b.v>0?'var(--up)':'var(--down)';
   const x1=Math.min(x0,xv(b.v)),w=Math.abs(xv(b.v)-x0);
-  const rx=4;
-  s2+='<rect x="'+x1+'" y="'+yy+'" width="'+Math.max(w,2)+'" height="'+h+'" rx="'+rx+'" fill="'+col+'" class="bar" data-i="'+i+'"/>';
+  s2+='<rect x="'+x1+'" y="'+yy+'" width="'+Math.max(w,2)+'" height="'+h+'" rx="4" fill="'+col+'" class="bar" data-i="'+i+'"/>';
   const lbl=b.name.slice(0,32)+(b.chart==='grossing'?' ($)':'');
   s2+='<text x="'+(m2.l-10)+'" y="'+(yy+h-3)+'" text-anchor="end" font-size="11.5" fill="var(--ink2)">'+lbl+'</text>';
   let vx=b.v>0?xv(b.v)+6:xv(b.v)-6, anc=b.v>0?'start':'end', fill='var(--muted)';
