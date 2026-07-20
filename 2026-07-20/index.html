@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market Digest Dashboard — 2026-07-20</title>
+<style>
+:root{
+  --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
+  --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+  --up:#2a78d6; --down:#e34948; --mid:#f0efec;
+  --ring:rgba(11,11,11,.10);
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7;
+  --muted:#898781; --grid:#2c2c2a; --axis:#383835;
+  --up:#3987e5; --down:#e66767; --mid:#383835;
+  --ring:rgba(255,255,255,.10);
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px 24px 56px}
+body.solo{padding:14px 14px 20px}
+body.solo header,body.solo section h2,body.solo details{display:none}
+main{max-width:1060px;margin:0 auto}
+h1{font-size:21px;margin:0 0 2px}
+.sub{color:var(--ink2);margin:0 0 28px}
+h2{font-size:15px;margin:34px 0 4px}
+body.solo section{margin:0}
+.note{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 14px 8px}
+.card h3{font-size:13px;font-weight:600;margin:0}
+.card .tag{font-size:11.5px;color:var(--muted);margin:1px 0 6px}
+svg{display:block;width:100%;height:auto}
+.tt{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--ring);
+  border-radius:6px;padding:5px 9px;font-size:12px;color:var(--ink);
+  box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;z-index:9}
+.tt b{font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:18px;font-size:12.5px;color:var(--ink2);margin:0 0 10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+/* lane weather */
+.lanes{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:6px 22px;
+  background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px 18px}
+.lane{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.lane .nm{flex:1;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11px;padding:1px 8px;border-radius:9px;min-width:62px;text-align:center;color:#fff}
+.chip.rising{background:var(--up)}
+.chip.declining{background:var(--down)}
+.chip.stable{background:var(--mid);color:var(--ink2)}
+.chip.none,.chip.toofew{background:transparent;color:var(--muted);border:1px dashed var(--grid)}
+.arr{color:var(--muted);font-size:11px;width:12px;text-align:center}
+.lane.flip .nm{font-weight:600}
+details{margin-top:26px}
+summary{cursor:pointer;color:var(--ink2);font-size:13px}
+table{border-collapse:collapse;margin-top:10px;font-size:12.5px;background:var(--surface);
+  border:1px solid var(--ring);border-radius:8px}
+th,td{padding:5px 12px;text-align:right;font-variant-numeric:tabular-nums;border-top:1px solid var(--grid)}
+th{color:var(--ink2);font-weight:600}
+td:first-child,th:first-child{text-align:left}
+</style></head><body><main>
+<header>
+<h1>Market Digest — visual companion</h1>
+<p class="sub">Week of 2026-07-20 · chart positions of the games we track (1 = top of the chart)</p>
+</header>
+
+<section data-view="lanes">
+<h2>Lane weather</h2>
+<p class="note">Every lane we track, last week → this week. Bold = changed direction this cycle. (Part of this week's extra flips comes from a sharper measuring lens; each flip's direction is real.)</p>
+<div class="lanes" id="lanes"></div>
+</section>
+
+<section data-view="movers">
+<h2>Games on the move</h2>
+<p class="note">Chart position over the last four weeks. Blue = gaining ground this week, red = just rolled over. Hover a point for the exact position.</p>
+<div class="legend"><span><i class="sw" style="background:var(--up)"></i>climbing</span><span><i class="sw" style="background:var(--down)"></i>rolled over</span></div>
+<div class="grid" id="panels"></div>
+</section>
+
+<section data-view="shifts">
+<h2>Positions gained or lost this week</h2>
+<p class="note">How many chart positions each game moved since last week. Longest bars = biggest moves. ($) = earnings chart.</p>
+<div class="card" id="barcard"></div>
+</section>
+
+<details><summary>Data table (movers shown above)</summary><div id="tbl"></div></details>
+</main>
+<div class="tt" id="tt"></div>
+<script>
+const D={"date": "2026-07-20", "weeks": ["Jun 29", "Jul 6", "Jul 14", "Jul 20"], "panels": [{"name": "Brain Puzzle 3: Crazy Mind", "chart": "free", "ranks": [69.0, 41.0, 46.0, 22.0], "pol": "up"}, {"name": "Toca Boca World", "chart": "free", "ranks": [46.0, 40.0, 43.0, 30.0], "pol": "up"}, {"name": "Mahjong Blast", "chart": "free", "ranks": [70.0, 66.0, 54.0, 43.0], "pol": "up"}, {"name": "Super Goal: Fun Soccer Game", "chart": "free", "ranks": [97.0, 55.0, 47.0, 36.0], "pol": "up"}, {"name": "Stack Ball - Crash Platforms", "chart": "free", "ranks": [91.0, 66.0, 64.0, 54.0], "pol": "up"}, {"name": "My Talking Tom Friends 2", "chart": "free", "ranks": [76.0, 76.0, 63.0, 53.0], "pol": "up"}, {"name": "\uc8fc\uacf5\uc744 \uc9c0\ucf1c\ub77c\uff1a\uc804\ubd80 \uc5c6\uc560\uae30", "chart": "grossing", "ranks": [91.0, 65.0, 69.0, 88.0], "pol": "down"}, {"name": "aquapark.io", "chart": "free", "ranks": [88.0, 82.0, 82.0, 98.0], "pol": "down"}], "bars": [{"name": "Brain Puzzle: Tricky Quest", "chart": "free", "v": 39.0}, {"name": "Car Jam Solver: Traffic Jam", "chart": "free", "v": 24.0}, {"name": "Brain Puzzle 3: Crazy Mind", "chart": "free", "v": 24.0}, {"name": "Heartopia", "chart": "grossing", "v": 16.0}, {"name": "Fashion Show: Makeup, Dress Up", "chart": "free", "v": 16.0}, {"name": "Toca Boca World", "chart": "free", "v": 13.0}, {"name": "Moto Race Go", "chart": "free", "v": 12.0}, {"name": "Satisfying Coloring", "chart": "free", "v": 11.0}, {"name": "Crazy Office \u2014 Slap & Smash", "chart": "free", "v": 11.0}, {"name": "Mahjong Blast", "chart": "free", "v": 11.0}, {"name": "SCHOOLBOY RUNAWAY - STEALTH", "chart": "free", "v": 11.0}, {"name": "Super Goal: Fun Soccer Game", "chart": "free", "v": 11.0}, {"name": "Jelly Hole: Roll & Eat Pals", "chart": "free", "v": -12.0}, {"name": "\ud55c\uac8c\uc784 \ud3ec\ucee4", "chart": "grossing", "v": -13.0}, {"name": "Gardenscapes", "chart": "free", "v": -13.0}, {"name": "Tile Park", "chart": "free", "v": -13.0}, {"name": "Zoo Prank: Crazy Animals", "chart": "free", "v": -14.0}, {"name": "Tower War - Tactical Conquest", "chart": "free", "v": -14.0}, {"name": "aquapark.io", "chart": "free", "v": -16.0}, {"name": "\uc8fc\uacf5\uc744 \uc9c0\ucf1c\ub77c\uff1a\uc804\ubd80 \uc5c6\uc560\uae30", "chart": "grossing", "v": -19.0}, {"name": "\ud55c\uac8c\uc784\ud3ec\ucee4 \ud074\ub798\uc2dd : 7\ud3ec\ucee4 \ud640\ub364 \uc12f\ub2e4 \ud6cc\ub77c \uc2ac\ub86f", "chart": "grossing", "v": -19.0}, {"name": "Mini Challenges: Calm Games", "chart": "free", "v": -23.0}, {"name": "LINE\uff1a\u30c7\u30a3\u30ba\u30cb\u30fc \u30c4\u30e0\u30c4\u30e0", "chart": "grossing", "v": -23.0}, {"name": "Gym Idle Clicker: Fitness Hero", "chart": "free", "v": -29.0}], "lanes": [{"name": "Virtual Pet & Kids Entertainment", "prev": "rising", "curr": "rising", "n": 13}, {"name": ".io Arena & PvP", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Board & Card Games Social", "prev": "stable", "curr": "stable", "n": 11}, {"name": "Destruction & Stress Relief", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Driving Simulation Legacy", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Endless Runner Legacy", "prev": "stable", "curr": "stable", "n": 5}, {"name": "Farming & Resource Idle", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Hole & Eat-to-Grow Puzzles", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Idle Defense & Horde Survival", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Idle Tycoons & Service Sims", "prev": "stable", "curr": "stable", "n": 5}, {"name": "Match-3 & Blast Puzzles", "prev": "stable", "curr": "stable", "n": 19}, {"name": "Merge & Build Narrative", "prev": "stable", "curr": "stable", "n": 8}, {"name": "Music & Rhythm Games", "prev": "stable", "curr": "stable", "n": 7}, {"name": "Screw & Bolt ASMR", "prev": "stable", "curr": "stable", "n": 8}, {"name": "Social Casino & Slots", "prev": "stable", "curr": "stable", "n": 18}, {"name": "Spin & Build Social PvP", "prev": "stable", "curr": "stable", "n": 5}, {"name": "Traffic & Parking Jam Puzzles", "prev": "stable", "curr": "stable", "n": 6}, {"name": "Zen Logic & Spatial Puzzles", "prev": "declining", "curr": "stable", "n": 8}, {"name": "ASMR Sandbox & Fidget Toys", "prev": "stable", "curr": "declining", "n": 7}, {"name": "ASMR Transformation & Craft", "prev": "declining", "curr": "declining", "n": 6}, {"name": "Brain Teaser & Trick Puzzles", "prev": "declining", "curr": "declining", "n": 5}, {"name": "Casual Shooters & Stealth", "prev": "declining", "curr": "declining", "n": 5}, {"name": "Cozy Collection & Decor", "prev": "declining", "curr": "declining", "n": 3}, {"name": "Crowd Runners & Gate Mechanics", "prev": "declining", "curr": "declining", "n": 4}, {"name": "Farm & Life Simulation", "prev": "declining", "curr": "declining", "n": 5}, {"name": "Idle Clicker & Incremental", "prev": "declining", "curr": "declining", "n": 2}, {"name": "Mahjong, Tile & Solitaire Puzzles", "prev": "declining", "curr": "declining", "n": 8}, {"name": "Party & Social Multiplayer", "prev": "declining", "curr": "declining", "n": 8}, {"name": "Platformer & Adventure", "prev": "declining", "curr": "declining", "n": 6}, {"name": "Sort & Color Match Puzzles", "prev": "declining", "curr": "declining", "n": 8}, {"name": "Speed Racers & Action Runners", "prev": "declining", "curr": "declining", "n": 6}, {"name": "Yarn & Thread Puzzles", "prev": "declining", "curr": "declining", "n": 7}, {"name": "Consumption & Evolution RPG", "prev": "too few", "curr": "too few", "n": 4}, {"name": "Sports PvP & Simulation", "prev": "too few", "curr": "too few", "n": 3}]};
+const view=new URLSearchParams(location.search).get('view');
+if(view){document.body.classList.add('solo');
+  document.querySelectorAll('section').forEach(s=>{if(s.dataset.view!==view)s.style.display='none';});}
+const tt=document.getElementById('tt');
+function showTT(e,html){tt.innerHTML=html;tt.style.display='block';
+  tt.style.left=(e.clientX+12)+'px';tt.style.top=(e.clientY-10)+'px';}
+function hideTT(){tt.style.display='none';}
+
+// --- lane weather ---
+const L=document.getElementById('lanes');
+D.lanes.forEach(l=>{
+  const flip=l.prev&&l.prev!==l.curr;
+  const d=document.createElement('div');d.className='lane'+(flip?' flip':'');
+  const chip=s=>s?'<span class="chip '+s.replace(' ','')+'">'+s+'</span>':'<span class="chip none">new</span>';
+  d.innerHTML='<span class="nm">'+l.name+'</span>'+chip(l.prev)+'<span class="arr">→</span>'+chip(l.curr);
+  d.addEventListener('mousemove',e=>showTT(e,l.name+'<br>'+l.n+' games charting · '+(flip?'changed this cycle':'unchanged')));
+  d.addEventListener('mouseleave',hideTT);
+  L.appendChild(d);
+});
+
+// --- trajectory small multiples ---
+const P=document.getElementById('panels');
+D.panels.forEach(p=>{
+  const W=300,H=150,m={l:30,r:12,t:10,b:22};
+  const vals=p.ranks.filter(v=>v!=null);
+  let lo=Math.min(...vals),hi=Math.max(...vals);
+  if(hi-lo<8){const c=(hi+lo)/2;lo=c-4;hi=c+4;}
+  lo=Math.max(1,Math.floor(lo-2));hi=Math.ceil(hi+2);
+  const x=i=>m.l+i*(W-m.l-m.r)/3;
+  const y=v=>m.t+(v-lo)/(hi-lo)*(H-m.t-m.b);
+  const col=p.pol==='up'?'var(--up)':'var(--down)';
+  let s='<svg viewBox="0 0 '+W+' '+H+'">';
+  [lo,Math.round((lo+hi)/2),hi].forEach(g=>{
+    s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="var(--grid)" stroke-width="1"/>';
+    s+='<text x="'+(m.l-6)+'" y="'+(y(g)+4)+'" text-anchor="end" font-size="10" fill="var(--muted)">#'+g+'</text>';});
+  D.weeks.forEach((w,i)=>{s+='<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="var(--muted)">'+w+'</text>';});
+  let path='',started=false;
+  p.ranks.forEach((v,i)=>{if(v==null)return;
+    path+=(started?'L':'M')+x(i)+' '+y(v)+' ';started=true;});
+  s+='<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+  p.ranks.forEach((v,i)=>{if(v==null)return;
+    s+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.5" fill="'+col+'" stroke="var(--surface)" stroke-width="2"/>';
+    s+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="11" fill="transparent" class="hit" data-i="'+i+'" data-v="'+v+'"/>';});
+  s+='</svg>';
+  const card=document.createElement('div');card.className='card';
+  card.innerHTML='<h3>'+p.name+'</h3><div class="tag">'+(p.chart==='grossing'?'earnings chart':'downloads chart')+'</div>'+s;
+  P.appendChild(card);
+  card.querySelectorAll('.hit').forEach(c=>{
+    c.addEventListener('mousemove',e=>showTT(e,p.name+'<br>'+D.weeks[+c.dataset.i]+': position <b>#'+(+c.dataset.v)+'</b>'));
+    c.addEventListener('mouseleave',hideTT);});
+});
+
+// --- diverging bars ---
+const B=D.bars,rowH=22,m2={l:255,r:56,t:8,b:24},W2=1000;
+const H2=m2.t+m2.b+B.length*rowH;
+const maxV=Math.max(...B.map(b=>Math.abs(b.v)));
+const x0=m2.l+(W2-m2.l-m2.r)/2, half=(W2-m2.l-m2.r)/2;
+const xv=v=>x0+v/maxV*half;
+let s2='<svg viewBox="0 0 '+W2+' '+H2+'">';
+s2+='<line x1="'+x0+'" x2="'+x0+'" y1="'+m2.t+'" y2="'+(H2-m2.b)+'" stroke="var(--axis)" stroke-width="1"/>';
+B.forEach((b,i)=>{
+  const yy=m2.t+i*rowH+3,h=rowH-6;
+  const col=b.v>0?'var(--up)':'var(--down)';
+  const x1=Math.min(x0,xv(b.v)),w=Math.abs(xv(b.v)-x0);
+  s2+='<rect x="'+x1+'" y="'+yy+'" width="'+Math.max(w,2)+'" height="'+h+'" rx="4" fill="'+col+'" class="bar" data-i="'+i+'"/>';
+  const lbl=b.name.slice(0,32)+(b.chart==='grossing'?' ($)':'');
+  s2+='<text x="'+(m2.l-10)+'" y="'+(yy+h-3)+'" text-anchor="end" font-size="11.5" fill="var(--ink2)">'+lbl+'</text>';
+  let vx=b.v>0?xv(b.v)+6:xv(b.v)-6, anc=b.v>0?'start':'end', fill='var(--muted)';
+  if(b.v<0&&vx<m2.l+34){vx=x1+8;anc='start';fill='#fff';}
+  s2+='<text x="'+vx+'" y="'+(yy+h-3)+'" text-anchor="'+anc+'" font-size="11" fill="'+fill+'" font-variant-numeric="tabular-nums">'+(b.v>0?'+':'')+b.v+'</text>';
+});
+s2+='<text x="'+(x0-8)+'" y="'+(H2-7)+'" text-anchor="end" font-size="10.5" fill="var(--muted)">lost positions ←</text>';
+s2+='<text x="'+(x0+8)+'" y="'+(H2-7)+'" font-size="10.5" fill="var(--muted)">→ gained positions</text>';
+s2+='</svg>';
+document.getElementById('barcard').innerHTML=s2;
+document.querySelectorAll('.bar').forEach(r=>{
+  r.addEventListener('mousemove',e=>{const b=B[+r.dataset.i];
+    showTT(e,b.name+'<br><b>'+(b.v>0?'+':'')+b.v+'</b> positions this week ('+(b.chart==='grossing'?'earnings':'downloads')+' chart)');});
+  r.addEventListener('mouseleave',hideTT);});
+
+// --- table view ---
+let t='<table><tr><th>Game</th><th>Chart</th>'+D.weeks.map(w=>'<th>'+w+'</th>').join('')+'<th>This week</th></tr>';
+D.panels.forEach(p=>{t+='<tr><td>'+p.name+'</td><td>'+(p.chart==='grossing'?'earnings':'downloads')+'</td>'+
+  p.ranks.map(v=>'<td>'+(v==null?'—':'#'+v)+'</td>').join('')+
+  '<td>'+(p.ranks[3]!=null&&p.ranks[2]!=null?(p.ranks[2]-p.ranks[3]>0?'+':'')+(p.ranks[2]-p.ranks[3]):'—')+'</td></tr>';});
+t+='</table>';
+document.getElementById('tbl').innerHTML=t;
+</script></body></html>
